@@ -14,6 +14,7 @@ class CybersourcePayerAuth extends Component {
   }
 
   componentWillMount = () => {
+    console.log('componentWillMount =>', JSON.stringify(this.props.appPayload))
     const { deviceDataCollectionUrl } = JSON.parse(this.props.appPayload)
     const { accessToken } = JSON.parse(this.props.appPayload)
     this.initiateDeviceDataCollection(deviceDataCollectionUrl, accessToken)
@@ -77,7 +78,7 @@ class CybersourcePayerAuth extends Component {
     form.target = 'collectionIframe'
     form.action = deviceDataCollectionUrl
     form.innerHTML = '<input id="cardinal_collection_form_input" type="hidden" name="JWT" value="' + accessToken + '"'
-    document.body.appendChild(js)
+    document.body.appendChild(form)
   }
 
   injectScript = (id, src, onLoad) => {
