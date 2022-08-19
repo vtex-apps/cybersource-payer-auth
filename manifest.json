@@ -1,7 +1,7 @@
 {
   "name": "cybersource-payer-auth",
   "vendor": "vtex",
-  "version": "0.0.2-beta.2",
+  "version": "0.0.2-beta.4",
   "title": "Payer Authentication App",
   "description": "Implements Cybersource Payer Authentication",
   "defaultLocale": "en",

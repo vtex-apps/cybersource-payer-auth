@@ -18,6 +18,7 @@ class CybersourcePayerAuth extends Component {
     const { deviceDataCollectionUrl } = JSON.parse(this.props.appPayload)
     const { accessToken } = JSON.parse(this.props.appPayload)
     this.initiateDeviceDataCollection(deviceDataCollectionUrl, accessToken)
+    this.render()
   }
 
   componentDidMount() {
@@ -61,6 +62,7 @@ class CybersourcePayerAuth extends Component {
 
   initiateDeviceDataCollection = (deviceDataCollectionUrl, accessToken) => {
     if (document.getElementById('cardinal_collection_iframe')) {
+      console.log('cardinal_collection_iframe found - returning')
       return
     }
 
@@ -71,7 +73,7 @@ class CybersourcePayerAuth extends Component {
     iframe.width = '10'
     iframe.style = '"display: none;'
     document.body.appendChild(iframe)
-    
+    console.log('iframe...', JSON.stringify(iframe))
     const form = document.createElement('form')
     form.id = 'cardinal_collection_form'
     form.method = 'POST'
@@ -79,6 +81,7 @@ class CybersourcePayerAuth extends Component {
     form.action = deviceDataCollectionUrl
     form.innerHTML = '<input id="cardinal_collection_form_input" type="hidden" name="JWT" value="' + accessToken + '"'
     document.body.appendChild(form)
+    console.log('form...', JSON.stringify(form))
   }
 
   injectScript = (id, src, onLoad) => {
@@ -100,7 +103,7 @@ class CybersourcePayerAuth extends Component {
 
   render() {
     const { scriptLoaded, loading } = this.state
-
+    console.log('rendering...')
     return (
       "<script>window.onload = function() { " +
         "var cardinalCollectionForm = document.querySelector('#cardinal_collection_form'); " +
