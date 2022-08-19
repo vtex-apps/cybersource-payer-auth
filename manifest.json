@@ -1,0 +1,20 @@
+{
+  "name": "cybersource-payer-auth",
+  "vendor": "vtex",
+  "version": "0.0.1",
+  "title": "Payer Authentication App",
+  "description": "Implements Cybersource Payer Authentication",
+  "defaultLocale": "en",
+  "mustUpdateAt": "2019-01-08",
+  "dependencies": {},
+  "builders": {
+    "react": "2.x",
+    "pages": "0.x",
+    "messages": "0.x",
+    "docs": "0.x"
+  },
+  "scripts": {
+    "postreleasy": "vtex publish --public"
+  },
+  "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
+}

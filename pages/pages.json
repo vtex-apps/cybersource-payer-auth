@@ -1,0 +1,7 @@
+{
+  "extensions": {
+    "checkout/transactions/cybersource-payer-auth": {
+      "component": "index"
+    }
+  }
+}
