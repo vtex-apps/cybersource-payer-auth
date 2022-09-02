@@ -13,15 +13,12 @@ class CybersourcePayerAuth extends Component {
     this.divContainer = React.createRef()
   }
 
-  componentWillMount = () => {
+  componentDidMount() {
     console.log('componentWillMount =>', JSON.stringify(this.props.appPayload))
     const { deviceDataCollectionUrl } = JSON.parse(this.props.appPayload)
     const { accessToken } = JSON.parse(this.props.appPayload)
     this.initiateDeviceDataCollection(deviceDataCollectionUrl, accessToken)
     this.render()
-  }
-
-  componentDidMount() {
     this.formRef.current && this.formRef.current.submit()
   }
 
@@ -74,7 +71,8 @@ class CybersourcePayerAuth extends Component {
     iframe.style = '"display: none;'
     document.body.appendChild(iframe)
     console.log('iframe...', JSON.stringify(iframe))
-    const form = document.createElement('form')
+
+    var form = document.createElement('form')
     form.id = 'cardinal_collection_form'
     form.method = 'POST'
     form.target = 'collectionIframe'
