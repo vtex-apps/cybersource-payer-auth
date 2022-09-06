@@ -14,11 +14,11 @@ class CybersourcePayerAuth extends Component {
   }
 
   componentDidMount() {
-    console.log('componentWillMount =>', JSON.stringify(this.props.appPayload))
+    console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
     const { deviceDataCollectionUrl } = JSON.parse(this.props.appPayload)
     const { accessToken } = JSON.parse(this.props.appPayload)
-    this.initiateDeviceDataCollection(deviceDataCollectionUrl, accessToken)
-    this.render()
+    
+    this.render(deviceDataCollectionUrl, accessToken)
     this.formRef.current && this.formRef.current.submit()
   }
 
@@ -57,58 +57,31 @@ class CybersourcePayerAuth extends Component {
     })
   }
 
-  initiateDeviceDataCollection = (deviceDataCollectionUrl, accessToken) => {
-    if (document.getElementById('cardinal_collection_iframe')) {
-      console.log('cardinal_collection_iframe found - returning')
-      return
-    }
-
-    var iframe = document.createElement('iframe')
-    iframe.id = 'cardinal_collection_iframe'
-    iframe.name = 'collectionIframe'
-    iframe.height = '10'
-    iframe.width = '10'
-    iframe.style = '"display: none;'
-    document.body.appendChild(iframe)
-    console.log('iframe...', JSON.stringify(iframe))
-
-    var form = document.createElement('form')
-    form.id = 'cardinal_collection_form'
-    form.method = 'POST'
-    form.target = 'collectionIframe'
-    form.action = deviceDataCollectionUrl
-    form.innerHTML = '<input id="cardinal_collection_form_input" type="hidden" name="JWT" value="' + accessToken + '"'
-    document.body.appendChild(form)
-    console.log('form...', JSON.stringify(form))
-  }
-
-  injectScript = (id, src, onLoad) => {
-    if (document.getElementById(id)) {
-      return
-    }
-
+  injectScript () {
     const head = document.getElementsByTagName('head')[0]
 
     const js = document.createElement('script')
-    js.id = id
-    js.src = src
-    js.async = true
-    js.defer = true
-    js.onload = onLoad
+    js.innerHTML = "window.onload = function() {" +
+      "var cardinalCollectionForm = document.querySelector('#cardinal_collection_form');" +
+      "if(cardinalCollectionForm) // form exists" +
+      "cardinalCollectionForm.submit();" +
+      "}"
 
     head.appendChild(js)
   }
 
-  render() {
+  render = (deviceDataCollectionUrl, accessToken) => {
     const { scriptLoaded, loading } = this.state
     console.log('rendering...')
     return (
-      "<script>window.onload = function() { " +
-        "var cardinalCollectionForm = document.querySelector('#cardinal_collection_form'); " +
-        "if(cardinalCollectionForm) // form exists " +
-          "cardinalCollectionForm.submit(); " +
-        "} " +
-      "</script>"
+      "<iframe id='cardinal_collection_iframe' name='collectionIframe' height='10' width='10' style='display:none;'></iframe>" +
+      "<form id='cardinal_collection_form' method='POST' target='collectionIframe' action=" + deviceDataCollectionUrl + ">" +
+      "<input id='cardinal_collection_form_input' type='hidden' name='JWT' value=" + accessToken + "</form> " +
+      "window.addEventListener('message', function(event) {" +
+        "if (event.origin === https://centinelapistag.cardinalcommerce.com) {" +
+        "console.log(event.data);" +
+         "}" +
+        "}, false);"
     )
   }
 }
