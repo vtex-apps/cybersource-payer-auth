@@ -8,7 +8,16 @@ interface CyberSourceAuthenticationProps {
 declare const $: any
 
 class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
-  public formRef = React.createRef<HTMLFormElement>()
+  private formRef: React.RefObject<HTMLFormElement>
+
+  constructor(
+    props:
+      | CyberSourceAuthenticationProps
+      | Readonly<CyberSourceAuthenticationProps>
+  ) {
+    super(props)
+    this.formRef = React.createRef<HTMLFormElement>()
+  }
 
   public state = {
     submitted: false,
@@ -16,9 +25,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
   public componentDidMount() {
     console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
-  }
-
-  public componentDidUpdate() {
     if (this.state.submitted) {
       return
     }
