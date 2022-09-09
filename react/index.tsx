@@ -34,6 +34,15 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
       event => {
         if (event.origin === 'https://centinelapistag.cardinalcommerce.com') {
           console.log(event.data)
+
+          const { createPaymentRequestReference } = JSON.parse(
+            this.props.appPayload
+          )
+
+          console.log(
+            'createPaymentRequestReference',
+            createPaymentRequestReference
+          )
         }
       },
       false
