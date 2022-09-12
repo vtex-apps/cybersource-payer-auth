@@ -1,0 +1,6 @@
+mutation PayerAuthorize($paymentId: String) {
+  saveAppSettings(app: "vtex.cybersource-payer-auth", paymentId: $paymentId)
+    @context(provider: "vtex.apps-graphql") {
+    message
+  }
+}

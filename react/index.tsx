@@ -1,5 +1,8 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react'
+import { useMutation } from 'react-apollo'
+
+import PayerAuthorize from './mutations/payerAuthorize.gql'
 
 interface CyberSourceAuthenticationProps {
   appPayload: string
@@ -43,6 +46,22 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             'createPaymentRequestReference',
             createPaymentRequestReference
           )
+
+          const [payerAuthorize, { data }] = useMutation(PayerAuthorize)
+
+          payerAuthorize({
+            variables: {
+              paymentId: createPaymentRequestReference,
+            },
+          }).then(() => {
+            let result = 'false'
+
+            if (data === 'approved') {
+              result = 'true'
+            }
+
+            this.respondTransaction(result)
+          })
         }
       },
       false

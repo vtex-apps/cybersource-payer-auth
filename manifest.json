@@ -6,7 +6,11 @@
   "description": "Implements Cybersource Payer Authentication",
   "defaultLocale": "en",
   "mustUpdateAt": "2019-01-08",
-  "dependencies": {},
+  "dependencies": {
+    "vtex.styleguide": "9.x",
+    "vtex.apps-graphql": "2.x",
+    "vtex.cybersource": "1.x"
+  },
   "builders": {
     "react": "2.x",
     "pages": "0.x",
