@@ -1,10 +1,5 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react'
-import { useMutation } from 'react-apollo'
-
-import PayerAuthorize from './mutations/payerAuthorize.gql'
-
-const [payerAuthorize] = useMutation(PayerAuthorize)
 
 interface CyberSourceAuthenticationProps {
   appPayload: string
@@ -36,7 +31,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
     window.addEventListener(
       'message',
-      event => {
+      async event => {
         if (event.origin === 'https://centinelapistag.cardinalcommerce.com') {
           console.log(event.data)
 
@@ -49,19 +44,25 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             createPaymentRequestReference
           )
 
-          payerAuthorize({
-            variables: {
-              paymentId: createPaymentRequestReference,
-            },
-          }).then(response => {
-            let result = 'false'
-
-            if (response.data?.payerAuthResponse === 'approved') {
-              result = 'true'
+          const payAuthRequest = await fetch(
+            `/cybersource/payer-auth/${createPaymentRequestReference}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'Cache-Control': 'no-cache',
+              },
             }
+          )
 
-            this.respondTransaction(result)
-          })
+          const payAuthResponse = await payAuthRequest.json()
+
+          console.log('payAuthResponse', payAuthResponse)
+          if (payAuthResponse.Status === 'approved') {
+            this.respondTransaction('true')
+          } else {
+            this.respondTransaction('false')
+          }
         }
       },
       false
