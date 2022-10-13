@@ -58,10 +58,41 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
           const payAuthResponse = await payAuthRequest.json()
 
           console.log('payAuthResponse', payAuthResponse)
-          if (payAuthResponse.Status === 'approved') {
+          console.log('payAuthResponse.status', payAuthResponse.status)
+          if (payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL') {
             this.respondTransaction('true')
-          } else {
+          } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
+            console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
             this.respondTransaction('false')
+          } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
+            console.log(
+              'payAuthResponse.consumerAuthenticationInformation.accessToken',
+              payAuthResponse.consumerAuthenticationInformation.accessToken
+            )
+            console.log(
+              'payAuthResponse.consumerAuthenticationInformation.acsUrl',
+              payAuthResponse.consumerAuthenticationInformation.acsUrl
+            )
+            console.log(
+              'payAuthResponse.consumerAuthenticationInformation.stepUpUrl',
+              payAuthResponse.consumerAuthenticationInformation.stepUpUrl
+            )
+            console.log(
+              'payAuthResponse.consumerAuthenticationInformation.token',
+              payAuthResponse.consumerAuthenticationInformation.token
+            )
+            const dec = atob(
+              payAuthResponse.consumerAuthenticationInformation.pareq
+            )
+
+            const decObj = JSON.parse(dec)
+
+            console.log('pareq', dec)
+            this.renderStepUp(
+              decObj.challengeWindowSize,
+              payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
+              payAuthResponse.consumerAuthenticationInformation.accessToken
+            )
           }
         }
       },
@@ -109,6 +140,44 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             name="JWT"
             value={accessToken}
           />
+        </form>
+      </>
+    )
+  }
+
+  public renderStepUp(
+    challengeWindowSize: string,
+    stepUpUrl: string,
+    accessToken: string
+  ) {
+    console.log('rendering step up...')
+    // Width x Height
+    // 01 250 x 400
+    // 02 390 x 400
+    // 03 500 x 600
+    // 04 600 x 400
+    // 05 Full screen
+    const widthArr = [250, 390, 500, 600]
+    const heightArr = [400, 400, 600, 400]
+    let windowSize = +challengeWindowSize
+
+    windowSize -= 1
+
+    return (
+      <>
+        <iframe
+          name="step-up-iframe"
+          height={heightArr[windowSize]}
+          width={widthArr[windowSize]}
+        />
+        <form
+          ref={this.formRef}
+          id="step-up-form"
+          method="POST"
+          target="step-up-iframe"
+          action={stepUpUrl}
+        >
+          <input type="hidden" name="JWT" value={accessToken} />
         </form>
       </>
     )
