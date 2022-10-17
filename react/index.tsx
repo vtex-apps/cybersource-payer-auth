@@ -1,14 +1,17 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react'
+import { Modal } from 'vtex.styleguide'
 
 interface CyberSourceAuthenticationProps {
   appPayload: string
 }
 
 declare const $: any
+declare const vtex: any
 
 class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   private formRef: React.RefObject<HTMLFormElement>
+  private formRefStepUp: React.RefObject<HTMLFormElement>
 
   constructor(
     props:
@@ -17,10 +20,16 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   ) {
     super(props)
     this.formRef = React.createRef<HTMLFormElement>()
+    this.formRefStepUp = React.createRef<HTMLFormElement>()
   }
 
   public state = {
     submitted: false,
+    renderStepUp: false,
+    height: '',
+    width: '',
+    stepUpUrl: '',
+    stepUpAccessToken: '',
   }
 
   public componentDidMount() {
@@ -59,7 +68,10 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
           console.log('payAuthResponse', payAuthResponse)
           console.log('payAuthResponse.status', payAuthResponse.status)
-          if (payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL') {
+          if (
+            payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
+            payAuthResponse.status === 'AUTHORIZED'
+          ) {
             this.respondTransaction('true')
           } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
             console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
@@ -88,11 +100,17 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             const decObj = JSON.parse(dec)
 
             console.log('pareq', dec)
+            // this.state.submitted = false
             this.renderStepUp(
               decObj.challengeWindowSize,
               payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
               payAuthResponse.consumerAuthenticationInformation.accessToken
             )
+
+            if (this.formRefStepUp.current) {
+              this.formRefStepUp.current.submit()
+              this.setState({ submitted: true })
+            }
           }
         }
       },
@@ -141,6 +159,28 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             value={accessToken}
           />
         </form>
+        {this.state.renderStepUp && (
+          <Modal isOpen={true} showCloseIcon={false}>
+            <iframe
+              name="step-up-iframe"
+              height={this.state.height}
+              width={this.state.width}
+            />
+            <form
+              ref={this.formRefStepUp}
+              id="step-up-form"
+              method="POST"
+              target="step-up-iframe"
+              action={this.state.stepUpUrl}
+            >
+              <input
+                type="hidden"
+                name="JWT"
+                value={this.state.stepUpAccessToken}
+              />
+            </form>
+          </Modal>
+        )}
       </>
     )
   }
@@ -157,30 +197,24 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     // 03 500 x 600
     // 04 600 x 400
     // 05 Full screen
-    const widthArr = [250, 390, 500, 600]
-    const heightArr = [400, 400, 600, 400]
+    const widthArr = [250, 390, 500, 600, 1200]
+    const heightArr = [400, 400, 600, 400, 800]
     let windowSize = +challengeWindowSize
 
     windowSize -= 1
-
-    return (
-      <>
-        <iframe
-          name="step-up-iframe"
-          height={heightArr[windowSize]}
-          width={widthArr[windowSize]}
-        />
-        <form
-          ref={this.formRef}
-          id="step-up-form"
-          method="POST"
-          target="step-up-iframe"
-          action={stepUpUrl}
-        >
-          <input type="hidden" name="JWT" value={accessToken} />
-        </form>
-      </>
+    console.log(
+      'window size',
+      `${widthArr[windowSize].toString()}x${heightArr[windowSize].toString()}`
     )
+    this.setState({
+      ...this.state,
+      height: heightArr[windowSize].toString(),
+      width: widthArr[windowSize].toString(),
+      stepUpUrl,
+      stepUpAccessToken: accessToken,
+      renderStepUp: true,
+    })
+    vtex.checkout.MessageUtils.hidePaymentMessage()
   }
 }
 
