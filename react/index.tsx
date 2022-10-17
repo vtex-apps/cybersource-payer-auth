@@ -41,76 +41,81 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     window.addEventListener(
       'message',
       async event => {
-        if (event.origin === 'https://centinelapistag.cardinalcommerce.com') {
-          console.log(event.data)
+        if (
+          event.origin !== 'https://centinelapistag.cardinalcommerce.com' &&
+          event.origin !== 'https://centinelapi.cardinalcommerce.com'
+        ) {
+          return
+        }
 
-          const { createPaymentRequestReference } = JSON.parse(
-            this.props.appPayload
-          )
+        console.log(event.data)
 
+        const { createPaymentRequestReference } = JSON.parse(
+          this.props.appPayload
+        )
+
+        console.log(
+          'createPaymentRequestReference',
+          createPaymentRequestReference
+        )
+
+        const payAuthRequest = await fetch(
+          `/cybersource/payer-auth/${createPaymentRequestReference}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'Cache-Control': 'no-cache',
+            },
+          }
+        )
+
+        const payAuthResponse = await payAuthRequest.json()
+
+        console.log('payAuthResponse', payAuthResponse)
+        console.log('payAuthResponse.status', payAuthResponse.status)
+        if (
+          payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
+          payAuthResponse.status === 'AUTHORIZED'
+        ) {
+          this.respondTransaction('true')
+        } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
+          console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
+          this.respondTransaction('false')
+        } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
           console.log(
-            'createPaymentRequestReference',
-            createPaymentRequestReference
+            'payAuthResponse.consumerAuthenticationInformation.accessToken',
+            payAuthResponse.consumerAuthenticationInformation.accessToken
+          )
+          console.log(
+            'payAuthResponse.consumerAuthenticationInformation.acsUrl',
+            payAuthResponse.consumerAuthenticationInformation.acsUrl
+          )
+          console.log(
+            'payAuthResponse.consumerAuthenticationInformation.stepUpUrl',
+            payAuthResponse.consumerAuthenticationInformation.stepUpUrl
+          )
+          console.log(
+            'payAuthResponse.consumerAuthenticationInformation.token',
+            payAuthResponse.consumerAuthenticationInformation.token
+          )
+          const dec = atob(
+            payAuthResponse.consumerAuthenticationInformation.pareq
           )
 
-          const payAuthRequest = await fetch(
-            `/cybersource/payer-auth/${createPaymentRequestReference}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'Cache-Control': 'no-cache',
-              },
-            }
+          const decObj = JSON.parse(dec)
+
+          console.log('pareq', dec)
+          // this.state.submitted = false
+          this.renderStepUp(
+            decObj.challengeWindowSize,
+            payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
+            payAuthResponse.consumerAuthenticationInformation.accessToken
           )
 
-          const payAuthResponse = await payAuthRequest.json()
-
-          console.log('payAuthResponse', payAuthResponse)
-          console.log('payAuthResponse.status', payAuthResponse.status)
-          if (
-            payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
-            payAuthResponse.status === 'AUTHORIZED'
-          ) {
-            this.respondTransaction('true')
-          } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
-            console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
-            this.respondTransaction('false')
-          } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
-            console.log(
-              'payAuthResponse.consumerAuthenticationInformation.accessToken',
-              payAuthResponse.consumerAuthenticationInformation.accessToken
-            )
-            console.log(
-              'payAuthResponse.consumerAuthenticationInformation.acsUrl',
-              payAuthResponse.consumerAuthenticationInformation.acsUrl
-            )
-            console.log(
-              'payAuthResponse.consumerAuthenticationInformation.stepUpUrl',
-              payAuthResponse.consumerAuthenticationInformation.stepUpUrl
-            )
-            console.log(
-              'payAuthResponse.consumerAuthenticationInformation.token',
-              payAuthResponse.consumerAuthenticationInformation.token
-            )
-            const dec = atob(
-              payAuthResponse.consumerAuthenticationInformation.pareq
-            )
-
-            const decObj = JSON.parse(dec)
-
-            console.log('pareq', dec)
-            // this.state.submitted = false
-            this.renderStepUp(
-              decObj.challengeWindowSize,
-              payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
-              payAuthResponse.consumerAuthenticationInformation.accessToken
-            )
-
-            if (this.formRefStepUp.current) {
-              this.formRefStepUp.current.submit()
-              this.setState({ submitted: true })
-            }
+          if (this.formRefStepUp.current) {
+            this.formRefStepUp.current.submit()
+            this.setState({ submitted: true })
           }
         }
       },

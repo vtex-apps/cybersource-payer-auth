@@ -7,7 +7,7 @@
   "defaultLocale": "en",
   "mustUpdateAt": "2019-01-08",
   "dependencies": {
-    "vtex.styleguide": "9.x",
+    "vtex.styleguide": "8.x",
     "vtex.apps-graphql": "2.x",
     "vtex.cybersource": "1.x"
   },
