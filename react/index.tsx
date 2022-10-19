@@ -111,9 +111,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
             const authStatusResponse = await authStatus.json()
 
-            console.log('authStatus', authStatus)
-            console.log('authStatusResponse', authStatusResponse)
-
             if (authStatusResponse === 'approved') {
               this.respondTransaction(true)
               clearInterval(checkAuthStatus)
