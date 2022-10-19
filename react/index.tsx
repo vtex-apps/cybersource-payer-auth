@@ -30,10 +30,11 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     width: '',
     stepUpUrl: '',
     stepUpAccessToken: '',
+    createPaymentRequestReference: '',
   }
 
   public componentDidMount() {
-    console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
+    // console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
     if (this.state.submitted) {
       return
     }
@@ -48,16 +49,14 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
           return
         }
 
-        console.log(event.data)
-
         const { createPaymentRequestReference } = JSON.parse(
           this.props.appPayload
         )
 
-        console.log(
-          'createPaymentRequestReference',
-          createPaymentRequestReference
-        )
+        this.setState({
+          ...this.state,
+          createPaymentRequestReference,
+        })
 
         const payAuthRequest = await fetch(
           `/cybersource/payer-auth/${createPaymentRequestReference}`,
@@ -72,41 +71,21 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
         const payAuthResponse = await payAuthRequest.json()
 
-        console.log('payAuthResponse', payAuthResponse)
-        console.log('payAuthResponse.status', payAuthResponse.status)
         if (
           payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
           payAuthResponse.status === 'AUTHORIZED'
         ) {
-          this.respondTransaction('true')
+          this.respondTransaction(true)
         } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
           console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
-          this.respondTransaction('false')
+          this.respondTransaction(false)
         } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
-          console.log(
-            'payAuthResponse.consumerAuthenticationInformation.accessToken',
-            payAuthResponse.consumerAuthenticationInformation.accessToken
-          )
-          console.log(
-            'payAuthResponse.consumerAuthenticationInformation.acsUrl',
-            payAuthResponse.consumerAuthenticationInformation.acsUrl
-          )
-          console.log(
-            'payAuthResponse.consumerAuthenticationInformation.stepUpUrl',
-            payAuthResponse.consumerAuthenticationInformation.stepUpUrl
-          )
-          console.log(
-            'payAuthResponse.consumerAuthenticationInformation.token',
-            payAuthResponse.consumerAuthenticationInformation.token
-          )
           const dec = atob(
             payAuthResponse.consumerAuthenticationInformation.pareq
           )
 
           const decObj = JSON.parse(dec)
 
-          console.log('pareq', dec)
-          // this.state.submitted = false
           this.renderStepUp(
             decObj.challengeWindowSize,
             payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
@@ -117,6 +96,34 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             this.formRefStepUp.current.submit()
             this.setState({ submitted: true })
           }
+
+          const checkAuthStatus = setInterval(async () => {
+            const authStatus = await fetch(
+              `/cybersource/payer-auth/status/${createPaymentRequestReference}`,
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json',
+                  'Cache-Control': 'no-cache',
+                },
+              }
+            )
+
+            const authStatusResponse = await authStatus.json()
+
+            console.log('authStatus', authStatus)
+            console.log('authStatusResponse', authStatusResponse)
+
+            if (authStatusResponse === 'approved') {
+              this.respondTransaction(true)
+              clearInterval(checkAuthStatus)
+            } else if (authStatusResponse === 'denied') {
+              this.respondTransaction(false)
+              clearInterval(checkAuthStatus)
+            }
+          }, 3000)
+        } else {
+          this.respondTransaction(false)
         }
       },
       false
@@ -128,8 +135,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     }
   }
 
-  public respondTransaction(status: string) {
-    console.log('respondTransaction', status)
+  public respondTransaction(status: boolean) {
     $(window).trigger('transactionValidation.vtex', [status])
   }
 
@@ -137,8 +143,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     const { deviceDataCollectionUrl, accessToken } = JSON.parse(
       this.props.appPayload
     )
-
-    console.log('rendering...')
 
     return (
       <>
@@ -183,6 +187,11 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
                 name="JWT"
                 value={this.state.stepUpAccessToken}
               />
+              <input
+                type="hidden"
+                name="MD"
+                value={this.state.createPaymentRequestReference}
+              />
             </form>
           </Modal>
         )}
@@ -195,7 +204,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     stepUpUrl: string,
     accessToken: string
   ) {
-    console.log('rendering step up...')
     // Width x Height
     // 01 250 x 400
     // 02 390 x 400
@@ -207,10 +215,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     let windowSize = +challengeWindowSize
 
     windowSize -= 1
-    console.log(
-      'window size',
-      `${widthArr[windowSize].toString()}x${heightArr[windowSize].toString()}`
-    )
     this.setState({
       ...this.state,
       height: heightArr[windowSize].toString(),
