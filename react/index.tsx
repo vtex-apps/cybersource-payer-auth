@@ -76,6 +76,11 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
           payAuthResponse.status === 'AUTHORIZED'
         ) {
           this.respondTransaction(true)
+        } else if (
+          payAuthResponse.status === 'DECLINED' ||
+          payAuthResponse.status === 'REFUSED'
+        ) {
+          this.verifyStatus(createPaymentRequestReference)
         } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
           console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
           this.respondTransaction(false)
@@ -97,28 +102,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             this.setState({ submitted: true })
           }
 
-          const checkAuthStatus = setInterval(async () => {
-            const authStatus = await fetch(
-              `/cybersource/payer-auth/status/${createPaymentRequestReference}`,
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json',
-                  'Cache-Control': 'no-cache',
-                },
-              }
-            )
-
-            const authStatusResponse = await authStatus.json()
-
-            if (authStatusResponse === 'approved') {
-              this.respondTransaction(true)
-              clearInterval(checkAuthStatus)
-            } else if (authStatusResponse === 'denied') {
-              this.respondTransaction(false)
-              clearInterval(checkAuthStatus)
-            }
-          }, 3000)
+          this.verifyStatus(createPaymentRequestReference)
         } else {
           this.respondTransaction(false)
         }
@@ -221,6 +205,31 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
       renderStepUp: true,
     })
     vtex.checkout.MessageUtils.hidePaymentMessage()
+  }
+
+  public verifyStatus(createPaymentRequestReference: string) {
+    const checkAuthStatus = setInterval(async () => {
+      const authStatus = await fetch(
+        `/cybersource/payer-auth/status/${createPaymentRequestReference}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+        }
+      )
+
+      const authStatusResponse = await authStatus.json()
+
+      if (authStatusResponse === 'approved') {
+        this.respondTransaction(true)
+        clearInterval(checkAuthStatus)
+      } else if (authStatusResponse === 'denied') {
+        this.respondTransaction(false)
+        clearInterval(checkAuthStatus)
+      }
+    }, 3000)
   }
 }
 
