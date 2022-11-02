@@ -34,7 +34,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   }
 
   public componentDidMount() {
-    // console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
     if (this.state.submitted) {
       return
     }
@@ -104,7 +103,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
           this.verifyStatus(createPaymentRequestReference)
         } else {
-          this.respondTransaction(false)
+          this.verifyStatus(createPaymentRequestReference)
         }
       },
       false
