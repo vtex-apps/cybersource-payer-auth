@@ -37,7 +37,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   }
 
   public componentDidMount() {
-    console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
     if (this.state.submitted) {
       return
     }
@@ -74,11 +73,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
         const payAuthResponse = await payAuthRequest.json()
 
-        console.log('payAuthResponse.status =>', payAuthResponse.status)
-        console.log(
-          'payAuthResponse.consumerAuthenticationInformation.cardholderMessage =>',
-          payAuthResponse.consumerAuthenticationInformation.cardholderMessage
-        )
         if (
           payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
           payAuthResponse.status === 'AUTHORIZED'
@@ -106,7 +100,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
           const decObj = JSON.parse(dec)
 
-          console.log('payAuthResponse =>', JSON.stringify(payAuthResponse))
           this.renderStepUp(
             decObj.challengeWindowSize,
             payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
@@ -230,7 +223,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   }
 
   public showAlert(alertMessage: string) {
-    console.log('alertMessage =>', alertMessage)
     this.setState({
       ...this.state,
       alertMessage,
@@ -254,7 +246,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
       const authStatusResponse = await authStatus.json()
 
-      console.log('authStatusResponse =>', authStatusResponse)
       if (authStatusResponse === 'approved') {
         this.respondTransaction(true)
         clearInterval(checkAuthStatus)
