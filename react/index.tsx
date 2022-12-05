@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import React, { Component } from 'react'
-import { Modal } from 'vtex.styleguide'
+import { Modal, Alert, Spinner } from 'vtex.styleguide'
 
 interface CyberSourceAuthenticationProps {
   appPayload: string
@@ -26,14 +26,18 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
   public state = {
     submitted: false,
     renderStepUp: false,
+    showAlert: false,
     height: '',
     width: '',
     stepUpUrl: '',
     stepUpAccessToken: '',
     createPaymentRequestReference: '',
+    alertMessage: '',
+    showSpinner: false,
   }
 
   public componentDidMount() {
+    console.log('componentDidMount =>', JSON.stringify(this.props.appPayload))
     if (this.state.submitted) {
       return
     }
@@ -70,6 +74,11 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
         const payAuthResponse = await payAuthRequest.json()
 
+        console.log('payAuthResponse.status =>', payAuthResponse.status)
+        console.log(
+          'payAuthResponse.consumerAuthenticationInformation.cardholderMessage =>',
+          payAuthResponse.consumerAuthenticationInformation.cardholderMessage
+        )
         if (
           payAuthResponse.status === 'AUTHENTICATION_SUCCESSFUL' ||
           payAuthResponse.status === 'AUTHORIZED'
@@ -77,12 +86,19 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
           this.respondTransaction(true)
         } else if (
           payAuthResponse.status === 'DECLINED' ||
-          payAuthResponse.status === 'REFUSED'
+          payAuthResponse.status === 'REFUSED' ||
+          payAuthResponse.status === 'AUTHENTICATION_FAILED'
         ) {
+          if (
+            payAuthResponse.consumerAuthenticationInformation.cardholderMessage
+          ) {
+            this.showAlert(
+              payAuthResponse.consumerAuthenticationInformation
+                .cardholderMessage
+            )
+          }
+
           this.verifyStatus(createPaymentRequestReference)
-        } else if (payAuthResponse.status === 'AUTHENTICATION_FAILED') {
-          console.log(payAuthResponse.cardholderMessage) // Need to show this to the shopper
-          this.respondTransaction(false)
         } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
           const dec = atob(
             payAuthResponse.consumerAuthenticationInformation.pareq
@@ -90,6 +106,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
           const decObj = JSON.parse(dec)
 
+          console.log('payAuthResponse =>', JSON.stringify(payAuthResponse))
           this.renderStepUp(
             decObj.challengeWindowSize,
             payAuthResponse.consumerAuthenticationInformation.stepUpUrl,
@@ -175,6 +192,12 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
             </form>
           </Modal>
         )}
+        {this.state.showAlert && (
+          <Alert type="error" onClose={() => this.respondTransaction(false)}>
+            {this.state.alertMessage}
+          </Alert>
+        )}
+        {this.state.showSpinner && <Spinner />}
       </>
     )
   }
@@ -206,6 +229,16 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
     vtex.checkout.MessageUtils.hidePaymentMessage()
   }
 
+  public showAlert(alertMessage: string) {
+    console.log('alertMessage =>', alertMessage)
+    this.setState({
+      ...this.state,
+      alertMessage,
+      showAlert: true,
+      renderStepUp: false,
+    })
+  }
+
   public verifyStatus(createPaymentRequestReference: string) {
     const checkAuthStatus = setInterval(async () => {
       const authStatus = await fetch(
@@ -221,6 +254,7 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
 
       const authStatusResponse = await authStatus.json()
 
+      console.log('authStatusResponse =>', authStatusResponse)
       if (authStatusResponse === 'approved') {
         this.respondTransaction(true)
         clearInterval(checkAuthStatus)
@@ -228,6 +262,8 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
         this.respondTransaction(false)
         clearInterval(checkAuthStatus)
       }
+
+      this.setState({ ...this.state, showSpinner: true })
     }, 3000)
   }
 }
