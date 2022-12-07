@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- QE workflow
+
 ## [0.0.4] - 2022-12-05
 
 ### Changed
