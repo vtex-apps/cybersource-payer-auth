@@ -83,15 +83,6 @@ class CybersourcePayerAuth extends Component<CyberSourceAuthenticationProps> {
           payAuthResponse.status === 'REFUSED' ||
           payAuthResponse.status === 'AUTHENTICATION_FAILED'
         ) {
-          if (
-            payAuthResponse.consumerAuthenticationInformation.cardholderMessage
-          ) {
-            this.showAlert(
-              payAuthResponse.consumerAuthenticationInformation
-                .cardholderMessage
-            )
-          }
-
           this.verifyStatus(createPaymentRequestReference)
         } else if (payAuthResponse.status === 'PENDING_AUTHENTICATION') {
           const dec = atob(
